@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Cấu hình - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Cấu hình</h1>
+
+<form method="post" action="{{ url_for('config_save') }}" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').innerText='Đang lưu...';">
+
+    <section class="card">
+        <h2>📷 Camera</h2>
+
+        <label>IP camera</label>
+        <input type="text" name="camera_ip" value="{{ cfg.camera.ip }}">
+
+        <label>RTSP port</label>
+        <input type="number" name="camera_rtsp_port" value="{{ cfg.camera.rtsp_port }}">
+
+        <label>Talk port (loa)</label>
+        <input type="number" name="camera_talk_port" value="{{ cfg.camera.get('talk_port', 8086) }}">
+
+        <label>Username</label>
+        <input type="text" name="camera_username" value="{{ cfg.camera.username }}">
+
+        <label>Password (để trống nếu không đổi)</label>
+        <input type="password" name="camera_password" placeholder="••••••••">
+
+        <label>Serial</label>
+        <input type="text" name="camera_serial" value="{{ cfg.camera.get('serial', '') }}">
+
+        <label>RTSP subtype (luồng detect/xem trực tiếp - nên để 1: luồng phụ, nhẹ)</label>
+        <input type="number" name="camera_rtsp_subtype" value="{{ cfg.camera.rtsp_subtype }}">
+
+        <label>
+            <input type="checkbox" name="camera_snapshot_enabled" {{ 'checked' if cfg.camera.get('snapshot_enabled', True) }}>
+            Mở thêm luồng chất lượng cao để chụp ảnh xe/biển số rõ nét
+        </label>
+
+        <label>RTSP subtype cho ảnh chất lượng cao (nên để 0: luồng chính, độ phân giải gốc)</label>
+        <input type="number" name="camera_snapshot_subtype" value="{{ cfg.camera.get('snapshot_subtype', 0) }}">
+    </section>
+
+    <section class="card">
+        <h2>🎯 YOLO</h2>
+
+        <label>File model</label>
+        <input type="text" name="yolo_model" value="{{ cfg.yolo.model }}">
+
+        <label>Ngưỡng tin cậy (confidence)</label>
+        <input type="number" step="0.01" name="yolo_confidence" value="{{ cfg.yolo.confidence }}">
+
+        <label>Kích thước ảnh (imgsz)</label>
+        <input type="number" name="yolo_imgsz" value="{{ cfg.yolo.imgsz }}">
+
+        <label>Số đối tượng tối đa / khung hình</label>
+        <input type="number" name="yolo_max_det" value="{{ cfg.yolo.get('max_det', 10) }}">
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="yolo_detect_person" {{ 'checked' if cfg.yolo.detect_person }}>
+            Phát hiện người
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="yolo_detect_vehicles" {{ 'checked' if cfg.yolo.detect_vehicles }}>
+            Phát hiện phương tiện
+        </label>
+
+        <div class="sub-checkboxes">
+            {% set vc = cfg.yolo.get('vehicle_classes', []) %}
+            <label class="checkbox-row"><input type="checkbox" name="vehicle_car" {{ 'checked' if 2 in vc }}> Ô tô</label>
+            <label class="checkbox-row"><input type="checkbox" name="vehicle_motorcycle" {{ 'checked' if 3 in vc }}> Xe máy</label>
+            <label class="checkbox-row"><input type="checkbox" name="vehicle_bus" {{ 'checked' if 5 in vc }}> Xe buýt</label>
+            <label class="checkbox-row"><input type="checkbox" name="vehicle_truck" {{ 'checked' if 7 in vc }}> Xe tải</label>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>🚨 Cảnh báo</h2>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="alert_enabled" {{ 'checked' if cfg.alert.enabled }}>
+            Bật cảnh báo / còi hú
+        </label>
+
+        <label>Giờ bắt đầu (HH:MM)</label>
+        <input type="text" name="alert_start" value="{{ cfg.alert.start }}">
+
+        <label>Giờ kết thúc (HH:MM)</label>
+        <input type="text" name="alert_end" value="{{ cfg.alert.end }}">
+
+        <label>Confirm (giây)</label>
+        <input type="number" step="0.1" name="alert_confirm_seconds" value="{{ cfg.alert.confirm_seconds }}">
+
+        <label>Cooldown (giây)</label>
+        <input type="number" step="0.1" name="alert_cooldown" value="{{ cfg.alert.cooldown }}">
+
+        <label>Grace / khoan dung (giây)</label>
+        <input type="number" step="0.1" name="alert_grace_seconds" value="{{ cfg.alert.get('grace_seconds', 1.5) }}">
+
+        <label>File âm thanh</label>
+        <input type="text" name="alert_sound" value="{{ cfg.alert.get('sound', 'sound.wav') }}">
+
+        <p class="hint" style="margin-top:14px">Loại sự kiện nào thì được phép kích hoạt còi hú:</p>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="alert_trigger_person" {{ 'checked' if cfg.alert.get('trigger_person', True) }}>
+            Người
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="alert_trigger_vehicle" {{ 'checked' if cfg.alert.get('trigger_vehicle', False) }}>
+            Xe cộ (ô tô/xe máy/xe tải/xe buýt)
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="alert_trigger_unknown_face" {{ 'checked' if cfg.alert.get('trigger_unknown_face', True) }}>
+            Người lạ (khuôn mặt không nhận diện được — cần bật Khuôn mặt bên dưới)
+        </label>
+
+        <p class="hint">
+            Vùng cảnh báo (chỉ tính phát hiện trong 1 khu vực cụ thể, chống
+            nhiễu) được vẽ riêng ở trang <a href="{{ url_for('zone_page') }}">Vùng cảnh báo</a>.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>💾 Lưu ảnh phát hiện</h2>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="detection_save_images" {{ 'checked' if cfg.detection.save_images }}>
+            Lưu ảnh khi phát hiện
+        </label>
+
+        <label>Tần suất YOLO (FPS)</label>
+        <input type="number" step="0.5" name="detection_detect_fps" value="{{ cfg.detection.detect_fps }}">
+
+        <label>Thư mục lưu</label>
+        <input type="text" name="detection_save_directory" value="{{ cfg.detection.save_directory }}">
+    </section>
+
+    <section class="card">
+        <h2>🙂 Khuôn mặt</h2>
+
+        {% set fc = cfg.get('face', {}) %}
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="face_enabled" {{ 'checked' if fc.get('enabled', True) }}>
+            Bật nhận diện khuôn mặt
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="face_alert_only_unknown" {{ 'checked' if fc.get('alert_only_unknown', True) }}>
+            Chỉ báo động khi gặp NGƯỜI LẠ
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="face_save_unknown_faces" {{ 'checked' if fc.get('save_unknown_faces', True) }}>
+            Lưu ảnh cận mặt người lạ
+        </label>
+
+        <label>Thư mục người quen</label>
+        <input type="text" name="face_known_faces_dir" value="{{ fc.get('known_faces_dir', 'known_faces') }}">
+
+        <label>Thư mục lưu người lạ</label>
+        <input type="text" name="face_unknown_save_directory" value="{{ fc.get('unknown_save_directory', 'unknown_faces') }}">
+
+        <label>Ngưỡng giống nhau (0-1)</label>
+        <input type="number" step="0.01" name="face_similarity_threshold" value="{{ fc.get('similarity_threshold', 0.72) }}">
+
+        <label>Margin phân biệt 2 người</label>
+        <input type="number" step="0.01" name="face_margin" value="{{ fc.get('margin', 0.05) }}">
+
+        <label>Top-K ảnh so khớp</label>
+        <input type="number" name="face_top_k" value="{{ fc.get('top_k', 5) }}">
+
+        <label>Kích thước mặt tối thiểu (px)</label>
+        <input type="number" name="face_min_face_size" value="{{ fc.get('min_face_size', 40) }}">
+
+        <label>Tần suất nhận diện (FPS)</label>
+        <input type="number" step="0.5" name="face_recognize_fps" value="{{ fc.get('recognize_fps', 2) }}">
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="face_debug" {{ 'checked' if fc.get('debug', False) }}>
+            Debug: in điểm số similarity ra console
+        </label>
+
+        <p class="hint">
+            Ngưỡng cao hơn = chặt hơn (ít nhận nhầm nhưng dễ báo Unknown nhầm
+            người quen). Sau khi đổi ảnh trong thư mục người quen, vào trang
+            <a href="{{ url_for('faces_page') }}">Khuôn mặt</a> để xây lại
+            database.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>🖥️ Hiển thị (chỉ áp dụng cho main.py bản desktop)</h2>
+
+        <label class="checkbox-row">
+            <input type="checkbox" name="display_show_camera" {{ 'checked' if cfg.display.show_camera }}>
+            Hiện cửa sổ camera (main.py)
+        </label>
+
+        <label>Tên cửa sổ</label>
+        <input type="text" name="display_window_name" value="{{ cfg.display.window_name }}">
+    </section>
+
+    <button type="submit" class="btn btn-green btn-wide">💾 Lưu & khởi động lại</button>
+
+</form>
+
+{% endblock %}

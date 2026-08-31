@@ -1,0 +1,107 @@
+{
+    "camera": {
+        "ip": "192.168.1.250",
+        "rtsp_port": 554,
+        "talk_port": 8086,
+        "username": "admin",
+        "password": "L29012FE",
+        "serial": "NOMI-IPC-K2E-5H3W-09D6",
+        "rtsp_subtype": 1,
+        "snapshot_enabled": true,
+        "snapshot_subtype": 0
+    },
+    "yolo": {
+        "model": "yolo11n.pt",
+        "confidence": 0.35,
+        "imgsz": 640,
+        "max_det": 20,
+        "detect_person": true,
+        "person_class": 0,
+        "detect_vehicles": true,
+        "vehicle_classes": [
+            2,
+            3,
+            5,
+            7
+        ]
+    },
+    "alert": {
+        "enabled": true,
+        "start": "19:00",
+        "end": "23:00",
+        "confirm_seconds": 3.0,
+        "cooldown": 10.0,
+        "sound": "sound.wav",
+        "grace_seconds": 1.5,
+        "zone_enabled": true,
+        "zone_points": [
+            [
+                0.9864864864864865,
+                0.6040182570490125
+            ],
+            [
+                0.9894894894894894,
+                0.9889519259480442
+            ],
+            [
+                0.0045045045045045045,
+                0.9753017958452417
+            ],
+            [
+                0.006006006006006006,
+                0.5794480228639679
+            ],
+            [
+                0.013513513513513514,
+                0.008872584566821653
+            ],
+            [
+                0.990990990990991,
+                0.025252740690184704
+            ]
+        ],
+        "trigger_person": true,
+        "trigger_vehicle": false,
+        "trigger_unknown_face": true
+    },
+    "detection": {
+        "save_images": true,
+        "save_directory": "detections",
+        "detect_fps": 2.0,
+        "retention_days": 15
+    },
+    "plate": {
+        "enabled": true,
+        "vehicle_save_directory": "detections/vehicles",
+        "plate_save_directory": "detections/plates",
+        "dedup_seconds": 300,
+        "iou_thresh": 0.3,
+        "confirm_seconds": 2.0,
+        "min_confidence": 0.5
+    },
+    "display": {
+        "show_camera": true,
+        "window_name": "IMOU - YOLO Detection"
+    },
+    "talk": {
+        "output_codec": "aac-adts",
+        "sample_rate": 16000,
+        "volume_gain": 1.0,
+        "frame_ms": 20,
+        "timeout": 120
+    },
+    "face": {
+        "enabled": true,
+        "known_faces_dir": "known_faces",
+        "db_cache": "face_db.pkl",
+        "similarity_threshold": 0.72,
+        "recognize_fps": 2.0,
+        "alert_only_unknown": true,
+        "save_unknown_faces": true,
+        "unknown_save_directory": "unknown_faces",
+        "margin": 0.05,
+        "top_k": 5,
+        "min_face_size": 40,
+        "debug": false
+    }
+}

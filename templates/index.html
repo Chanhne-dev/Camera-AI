@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Trang chủ - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Camera trực tiếp</h1>
+
+<div class="status-bar">
+    <span class="badge {{ 'ok' if status == 'RUNNING' else ('warn' if status in ['STARTING', 'RECONNECTING'] else 'off') }}">
+        {{ status }}
+    </span>
+
+    {% if siren_on %}
+        <span class="badge danger">🔊 COI HU DANG KEU</span>
+    {% endif %}
+
+    {% if face_enabled %}
+        <span class="badge info">Nhận diện khuôn mặt: BẬT</span>
+    {% else %}
+        <span class="badge">Nhận diện khuôn mặt: TẮT</span>
+    {% endif %}
+</div>
+
+{% if error %}
+<div class="alert-box">
+    ⚠️ Lỗi: {{ error }}
+</div>
+{% endif %}
+
+{% if warning %}
+<div class="warning-box">
+    ℹ️ {{ warning }}
+</div>
+{% endif %}
+
+<div class="video-wrap">
+    <img src="{{ url_for('video_feed') }}" alt="Camera live" class="video-frame">
+</div>
+
+<div class="controls">
+    <form method="post" action="{{ url_for('start_route') }}" style="display:inline" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='Đang xử lý...';">
+        <button type="submit" class="btn btn-green">▶ Bắt đầu</button>
+    </form>
+
+    <form method="post" action="{{ url_for('stop_route') }}" style="display:inline" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='Đang xử lý...';">
+        <button type="submit" class="btn btn-red">⏹ Dừng</button>
+    </form>
+
+    <form method="post" action="{{ url_for('restart_route') }}" style="display:inline" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='Đang xử lý...';">
+        <button type="submit" class="btn btn-blue">🔄 Khởi động lại</button>
+    </form>
+</div>
+
+{% if faces %}
+<h2>Khuôn mặt đang thấy</h2>
+<ul class="face-list">
+    {% for f in faces %}
+    <li class="{{ 'known' if f.name != 'Unknown' else 'unknown' }}">
+        {{ f.name }} — {{ (f.similarity * 100) | round(1) }}%
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<script>
+// Tu dong reload trang moi 5s de cap nhat trang thai (khong reload anh,
+// anh da tu chay qua MJPEG stream roi)
+setTimeout(function() {
+    fetch("{{ url_for('api_status') }}")
+        .then(r => r.json())
+        .then(data => {
+            // co the mo rong: cap nhat DOM thay vi reload ca trang
+        });
+}, 5000);
+</script>
+
+{% endblock %}

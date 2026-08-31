@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Phát lại - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Phát lại từ thẻ nhớ <span class="exp-badge">THỬ NGHIỆM</span></h1>
+
+<div class="warning-box">
+    ℹ️ Tính năng này dùng URL RTSP phát lại chuẩn của dòng camera
+    Dahua/Imou, gọi trực tiếp vào camera qua mạng LAN. Kết quả phụ thuộc
+    vào đời camera/firmware có hỗ trợ hay không, và thẻ nhớ có dữ liệu
+    trong khoảng thời gian yêu cầu hay không. Nếu báo lỗi, đây là giới
+    hạn của camera — hãy thử lại với khoảng thời gian ngắn hơn, hoặc dùng
+    app IMOU chính hãng để xem lại chắc chắn hoạt động.
+</div>
+
+<section class="card">
+    <h2>Tải đoạn ghi hình</h2>
+
+    <form method="post" action="{{ url_for('playback_start') }}" id="playbackForm">
+        <label>Ngày</label>
+        <input type="date" name="date" id="dateInput" required>
+
+        <label>Kéo để chọn khoảng thời gian trong ngày</label>
+
+        <div class="timeline-labels">
+            <span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>24h</span>
+        </div>
+
+        <div class="timeline-bar" id="timelineBar">
+            <div class="timeline-selection" id="timelineSelection"></div>
+            <div class="timeline-handle" id="handleStart" data-handle="start" tabindex="0"></div>
+            <div class="timeline-handle" id="handleEnd" data-handle="end" tabindex="0"></div>
+        </div>
+
+        <p class="timeline-readout" id="timelineReadout">--:-- → --:--</p>
+
+        <div class="time-inputs-row">
+            <div>
+                <label>Giờ bắt đầu</label>
+                <input type="time" name="start_time" id="startTimeInput" required>
+            </div>
+            <div>
+                <label>Giờ kết thúc</label>
+                <input type="time" name="end_time" id="endTimeInput" required>
+            </div>
+        </div>
+
+        <p class="hint">Tối đa 30 phút mỗi lần tải. Quá trình tải chạy nền, có thể mất vài phút.</p>
+
+        <button type="submit" class="btn btn-green btn-wide">⬇ Tải đoạn ghi hình</button>
+    </form>
+</section>
+
+<script>
+(function() {
+    const bar = document.getElementById('timelineBar');
+    const selection = document.getElementById('timelineSelection');
+    const handleStart = document.getElementById('handleStart');
+    const handleEnd = document.getElementById('handleEnd');
+    const readout = document.getElementById('timelineReadout');
+    const startInput = document.getElementById('startTimeInput');
+    const endInput = document.getElementById('endTimeInput');
+    const dateInput = document.getElementById('dateInput');
+
+    const MAX_RANGE_MIN = 30;
+    const DAY_MIN = 24 * 60;
+
+    // Mac dinh: 15 phut gan nhat, ket thuc = bay gio, bat dau = 15 phut truoc
+    const now = new Date();
+    let endMin = now.getHours() * 60 + now.getMinutes();
+    let startMin = Math.max(0, endMin - 15);
+
+    function fmt(min) {
+        min = ((min % DAY_MIN) + DAY_MIN) % DAY_MIN;
+        const h = Math.floor(min / 60).toString().padStart(2, '0');
+        const m = Math.floor(min % 60).toString().padStart(2, '0');
+        return h + ':' + m;
+    }
+
+    function setDefaultDate() {
+        const y = now.getFullYear();
+        const m = (now.getMonth() + 1).toString().padStart(2, '0');
+        const d = now.getDate().toString().padStart(2, '0');
+        dateInput.value = `${y}-${m}-${d}`;
+    }
+
+    function render() {
+        const startPct = (startMin / DAY_MIN) * 100;
+        const endPct = (endMin / DAY_MIN) * 100;
+
+        handleStart.style.left = startPct + '%';
+        handleEnd.style.left = endPct + '%';
+        selection.style.left = startPct + '%';
+        selection.style.width = Math.max(0, endPct - startPct) + '%';
+
+        readout.innerText = fmt(startMin) + ' → ' + fmt(endMin);
+
+        startInput.value = fmt(startMin);
+        endInput.value = fmt(endMin);
+    }
+
+    function minuteFromClientX(clientX) {
+        const rect = bar.getBoundingClientRect();
+        const frac = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        // Lam tron toi 5 phut gan nhat cho de chinh
+        return Math.round((frac * DAY_MIN) / 5) * 5;
+    }
+
+    let dragging = null;
+
+    function onPointerDown(handle) {
+        return function(e) {
+            e.preventDefault();
+            dragging = handle;
+        };
+    }
+
+    function onPointerMove(e) {
+        if (!dragging) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let min = minuteFromClientX(clientX);
+
+        if (dragging === 'start') {
+            startMin = Math.min(min, endMin - 5);
+            startMin = Math.max(0, startMin);
+            // Gioi han khoang toi da MAX_RANGE_MIN phut
+            if (endMin - startMin > MAX_RANGE_MIN) {
+                startMin = endMin - MAX_RANGE_MIN;
+            }
+        } else {
+            endMin = Math.max(min, startMin + 5);
+            endMin = Math.min(DAY_MIN, endMin);
+            if (endMin - startMin > MAX_RANGE_MIN) {
+                endMin = startMin + MAX_RANGE_MIN;
+            }
+        }
+
+        render();
+    }
+
+    function onPointerUp() {
+        dragging = null;
+    }
+
+    handleStart.addEventListener('mousedown', onPointerDown('start'));
+    handleEnd.addEventListener('mousedown', onPointerDown('end'));
+    handleStart.addEventListener('touchstart', onPointerDown('start'), { passive: false });
+    handleEnd.addEventListener('touchstart', onPointerDown('end'), { passive: false });
+
+    window.addEventListener('mousemove', onPointerMove);
+    window.addEventListener('touchmove', onPointerMove, { passive: false });
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchend', onPointerUp);
+
+    // Cho phep go tay chinh xac vao 2 o gio, dong bo lai thanh timeline
+    function parseTimeToMin(value) {
+        const [h, m] = value.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    startInput.addEventListener('change', function() {
+        startMin = Math.min(parseTimeToMin(this.value), endMin - 5);
+        render();
+    });
+
+    endInput.addEventListener('change', function() {
+        endMin = Math.max(parseTimeToMin(this.value), startMin + 5);
+        render();
+    });
+
+    setDefaultDate();
+    render();
+})();
+</script>
+
+{% if jobs %}
+<section class="card">
+    <h2>Đang xử lý</h2>
+    <ul class="job-list" id="jobList">
+        {% for job_id, job in jobs.items() %}
+        {% if job.status in ['starting', 'running'] %}
+        <li data-job-id="{{ job_id }}">
+            ⏳ {{ job.file }} — <span class="job-status">{{ job.status }}</span>
+        </li>
+        {% elif job.status == 'error' %}
+        <li>❌ {{ job.file }} — lỗi: {{ job.error }}</li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+
+<section class="card">
+    <h2>Video đã tải</h2>
+
+    {% if files %}
+    {% for f in files %}
+    <div class="playback-item">
+        <video controls preload="none" class="playback-video">
+            <source src="{{ url_for('media', subpath='playback_downloads/' + f) }}" type="video/mp4">
+        </video>
+        <div class="playback-item-footer">
+            <span>{{ f }}</span>
+            <form method="post" action="{{ url_for('playback_delete') }}" style="display:inline">
+                <input type="hidden" name="file" value="{{ f }}">
+                <button type="submit" class="btn btn-red">🗑 Xoá</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="hint">Chưa có video nào được tải.</p>
+    {% endif %}
+</section>
+
+<script>
+// Tu dong reload trang moi 5s NEU dang co job dang chay, de cap nhat
+// trang thai / danh sach video moi tai xong.
+{% set has_running = jobs.values() | selectattr('status', 'in', ['starting', 'running']) | list %}
+{% if has_running %}
+setTimeout(function() { window.location.reload(); }, 5000);
+{% endif %}
+</script>
+
+{% endblock %}

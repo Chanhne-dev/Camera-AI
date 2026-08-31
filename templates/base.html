@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}IMOU AI{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="topnav">
+    <div class="brand">📷 IMOU AI</div>
+    <a href="{{ url_for('index') }}">Trang chủ</a>
+    <a href="{{ url_for('config_page') }}">Cấu hình</a>
+    <a href="{{ url_for('faces_page') }}">Khuôn mặt</a>
+    <a href="{{ url_for('zone_page') }}">Vùng cảnh báo</a>
+    <a href="{{ url_for('events_page') }}">Sự kiện</a>
+    <a href="{{ url_for('playback_page') }}">Phát lại</a>
+</nav>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

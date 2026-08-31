@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Khuôn mặt - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Quản lý khuôn mặt</h1>
+
+<section class="card">
+    <h2>Người đã đăng ký</h2>
+
+    {% if people %}
+    <ul class="people-list">
+        {% for p in people %}
+        <li>{{ p.name }} — {{ p.count }} ảnh</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint">Chưa có ai được đăng ký.</p>
+    {% endif %}
+</section>
+
+<section class="card">
+    <h2>Thêm / cập nhật ảnh cho 1 người</h2>
+
+    <form method="post" action="{{ url_for('faces_upload') }}" enctype="multipart/form-data">
+        <label>Tên người</label>
+        <input type="text" name="name" placeholder="VD: Bố" required>
+
+        <label>Chọn ảnh (có thể chọn nhiều ảnh, hoặc chụp trực tiếp bằng camera điện thoại)</label>
+        <input type="file" name="photos" accept="image/*" multiple capture="environment" required>
+
+        <p class="hint">
+            Nên chọn 5-10 ảnh rõ mặt, nhiều góc khác nhau, đủ sáng. Có thể bấm
+            nhiều lần để thêm dần ảnh cho cùng 1 người (chỉ cần gõ đúng tên cũ).
+        </p>
+
+        <button type="submit" class="btn btn-blue btn-wide">⬆ Tải ảnh lên</button>
+    </form>
+</section>
+
+<section class="card">
+    <h2>Xây lại Database nhận diện</h2>
+    <p class="hint">
+        Bấm nút này sau khi thêm/xoá/sửa ảnh trong thư mục người quen, để hệ
+        thống tính lại toàn bộ embedding khuôn mặt.
+    </p>
+
+    <form method="post" action="{{ url_for('faces_rebuild') }}">
+        <button type="submit" class="btn btn-green btn-wide">🔁 Xây lại Database</button>
+    </form>
+</section>
+
+{% endblock %}

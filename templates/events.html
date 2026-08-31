@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Sự kiện - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Lịch sử sự kiện</h1>
+
+<div class="filter-row">
+    <a href="{{ url_for('events_page') }}" class="chip {{ 'active' if not current_type }}">Tất cả</a>
+    {% for key, label in type_labels.items() %}
+    <a href="{{ url_for('events_page', type=key) }}" class="chip {{ 'active' if current_type == key }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+<p class="hint">{{ total }} sự kiện được ghi nhận{% if current_type %} (loại: {{ type_labels.get(current_type, current_type) }}){% endif %}.</p>
+
+{% if events %}
+<div class="event-grid">
+    {% for e in events %}
+    <div class="event-card">
+        {% if e.image %}
+        <img src="{{ url_for('media', subpath=e.image) }}" alt="{{ e.type_label }}" class="event-thumb" onclick="openLightbox(this.src)">
+        {% else %}
+        <div class="event-thumb event-thumb-empty">Không có ảnh</div>
+        {% endif %}
+        {% if e.type == "vehicle" and e.plate_image %}
+        <img src="{{ url_for('media', subpath=e.plate_image) }}" alt="Biển số" class="event-thumb event-thumb-plate" onclick="openLightbox(this.src)">
+        {% endif %}
+        <div class="event-meta">
+            <span class="event-type-badge type-{{ e.type }}">{{ e.type_label }}</span>
+            <span class="event-time">{{ e.ts_str }}</span>
+            {% if e.name %}<span class="event-name">{{ e.name }}</span>{% endif %}
+            {% if e.type == "vehicle" %}
+            <span class="event-plate">{{ e.plate if e.plate else "Không đọc được biển số" }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+    {% if page > 1 %}
+    <a class="btn btn-blue" href="{{ url_for('events_page', type=current_type, page=page-1) }}">‹ Trước</a>
+    {% endif %}
+    <span class="page-indicator">Trang {{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a class="btn btn-blue" href="{{ url_for('events_page', type=current_type, page=page+1) }}">Sau ›</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<p class="hint">Chưa có sự kiện nào được ghi nhận.</p>
+{% endif %}
+
+<!-- Lightbox: xem anh phong to o chat luong goc (chinh anh da luu tren
+     dia, khong resize/nen lai) - bam vao anh de mo, bam ra ngoai / nut
+     dong / phim Esc de tat. -->
+<div id="lightbox-overlay" class="lightbox-overlay" onclick="closeLightbox(event)">
+    <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+    <img id="lightbox-img" class="lightbox-img" src="" alt="Xem phóng to">
+</div>
+
+<script>
+function openLightbox(src) {
+    document.getElementById("lightbox-img").src = src;
+    document.getElementById("lightbox-overlay").classList.add("open");
+}
+
+function closeLightbox(evt) {
+    if (evt && evt.target && evt.target.id === "lightbox-img") {
+        return; // bam vao chinh anh -> khong dong (de con pinch-zoom tren mobile)
+    }
+    document.getElementById("lightbox-overlay").classList.remove("open");
+    document.getElementById("lightbox-img").src = "";
+}
+
+document.addEventListener("keydown", function (evt) {
+    if (evt.key === "Escape") {
+        closeLightbox();
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Vùng cảnh báo - IMOU AI{% endblock %}
+
+{% block content %}
+
+<h1>Vùng cảnh báo (chống nhiễu)</h1>
+
+<p class="hint">
+    Chạm để đánh dấu các điểm tạo thành 1 vùng (đa giác) trên khung hình.
+    Hệ thống chỉ báo động khi người/xe/khuôn mặt <strong>đứng trong vùng
+    này</strong> — bỏ qua chuyển động ngoài vùng (ngoài đường, sân nhà
+    hàng xóm, cây cối đung đưa...). Cần ít nhất 3 điểm. Để trống = không
+    lọc vùng, quét toàn bộ khung hình như trước.
+</p>
+
+<section class="card">
+    <label class="checkbox-row">
+        <input type="checkbox" id="zoneEnabled" {{ 'checked' if zone_enabled }}>
+        Bật lọc theo vùng cảnh báo
+    </label>
+
+    <div class="zone-canvas-wrap">
+        <img id="snapshotImg" src="{{ url_for('snapshot') }}" alt="Camera snapshot">
+        <canvas id="zoneCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <button type="button" class="btn btn-blue" onclick="reloadSnapshot()">🔄 Chụp lại ảnh nền</button>
+        <button type="button" class="btn btn-red" onclick="clearPoints()">🗑 Xoá điểm</button>
+        <button type="button" class="btn btn-blue" onclick="undoPoint()">↩ Undo điểm cuối</button>
+    </div>
+
+    <p class="hint" id="pointCount">0 điểm đã đánh dấu.</p>
+
+    <form method="post" action="{{ url_for('zone_save') }}" id="zoneForm">
+        <input type="hidden" id="zoneEnabledHidden" value="">
+        <input type="hidden" name="zone_points" id="zonePointsHidden" value="[]">
+        <button type="submit" class="btn btn-green btn-wide">💾 Lưu vùng cảnh báo & khởi động lại</button>
+    </form>
+</section>
+
+<script>
+const img = document.getElementById('snapshotImg');
+const canvas = document.getElementById('zoneCanvas');
+const ctx = canvas.getContext('2d');
+const pointCountEl = document.getElementById('pointCount');
+const zoneEnabledCheckbox = document.getElementById('zoneEnabled');
+
+// Diem duoc luu o toa do CHUAN HOA (0..1) de khong phu thuoc kich thuoc
+// hien thi thuc te tren man hinh.
+let points = JSON.parse('{{ zone_points | safe }}' || '[]');
+
+function resizeCanvas() {
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+    draw();
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (points.length === 0) return;
+
+    ctx.strokeStyle = '#ffcc00';
+    ctx.fillStyle = 'rgba(255, 204, 0, 0.25)';
+    ctx.lineWidth = 3;
+
+    ctx.beginPath();
+    points.forEach(([nx, ny], i) => {
+        const x = nx * canvas.width;
+        const y = ny * canvas.height;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    });
+    if (points.length >= 3) ctx.closePath();
+    ctx.stroke();
+    if (points.length >= 3) ctx.fill();
+
+    points.forEach(([nx, ny]) => {
+        const x = nx * canvas.width;
+        const y = ny * canvas.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffcc00';
+        ctx.fill();
+    });
+
+    pointCountEl.innerText = points.length + ' điểm đã đánh dấu.';
+}
+
+function addPointFromEvent(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const nx = (clientX - rect.left) / rect.width;
+    const ny = (clientY - rect.top) / rect.height;
+    points.push([Math.max(0, Math.min(1, nx)), Math.max(0, Math.min(1, ny))]);
+    draw();
+}
+
+canvas.addEventListener('click', (e) => addPointFromEvent(e.clientX, e.clientY));
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    addPointFromEvent(t.clientX, t.clientY);
+}, { passive: false });
+
+function clearPoints() {
+    points = [];
+    draw();
+}
+
+function undoPoint() {
+    points.pop();
+    draw();
+}
+
+function reloadSnapshot() {
+    img.src = "{{ url_for('snapshot') }}?t=" + Date.now();
+}
+
+img.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+
+document.getElementById('zoneForm').addEventListener('submit', function() {
+    document.getElementById('zonePointsHidden').value = JSON.stringify(points);
+
+    const hiddenEnabled = document.getElementById('zoneEnabledHidden');
+
+    if (zoneEnabledCheckbox.checked) {
+        hiddenEnabled.setAttribute('name', 'zone_enabled');
+        hiddenEnabled.value = 'on';
+    } else {
+        hiddenEnabled.removeAttribute('name');
+    }
+});
+
+if (img.complete) resizeCanvas();
+</script>
+
+{% endblock %}
