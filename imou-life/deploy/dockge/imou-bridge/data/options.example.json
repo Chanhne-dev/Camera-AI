@@ -1,0 +1,12 @@
+{
+  "log_level": "info",
+  "discovery_ui": true,
+  "go2rtc": { "rtsp_port": 8554, "api_port": 1984, "webrtc_port": 8555 },
+  "dlna_base_port": 8800,
+  "bridge": { "engine": "python", "python_bridge": "/opt/imou-p2p-bridge/imou_dhp2p.py", "restart_seconds": 5, "base_port": 8600, "verbose": false, "warm_streams": true, "warm_all_streams": false, "warm_restart_seconds": 30 },
+  "accounts": [],
+  "cameras": [
+    { "name": "remote camera", "mode": "p2p", "serial": "NOMI-IPC-K2E-5H3W-09D6", "username": "admin", "password": "L29012FE", "relay": false },
+    { "name": "lan camera", "mode": "lan", "host": "<camera-ip>", "username": "admin", "password": "CHANGEME" }
+  ]
+}
