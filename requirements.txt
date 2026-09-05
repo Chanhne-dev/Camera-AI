@@ -5,8 +5,6 @@ facenet-pytorch
 Pillow
 flask
 waitress
-# Doc bien so xe (OCR). CAN CAI THEM goi he thong "tesseract-ocr":
-#   Ubuntu/proot-distro: apt install -y tesseract-ocr
-#   (khong co goi he thong nay thi van chay binh thuong, chi khong
-#   doc duoc chu bien so - van luu duoc anh xe/anh bien so nhu cu)
-pytesseract
+# Doc bien so xe (YOLOv8 + EasyOCR - xem plate_engine_yolo_anpr.py)
+easyocr
+

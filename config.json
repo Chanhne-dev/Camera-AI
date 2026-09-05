@@ -11,8 +11,8 @@
         "snapshot_subtype": 0
     },
     "yolo": {
-        "model": "yolo11n.pt",
-        "confidence": 0.35,
+        "model": "models/yolo11n.pt",
+        "confidence": 0.45,
         "imgsz": 640,
         "max_det": 20,
         "detect_person": true,
@@ -26,58 +26,39 @@
         ]
     },
     "alert": {
-        "enabled": true,
+        "enabled": false,
         "start": "19:00",
         "end": "23:00",
         "confirm_seconds": 3.0,
         "cooldown": 10.0,
-        "sound": "sound.wav",
+        "sound": "assets/sound.wav",
         "grace_seconds": 1.5,
         "zone_enabled": true,
-        "zone_points": [
-            [
-                0.9864864864864865,
-                0.6040182570490125
-            ],
-            [
-                0.9894894894894894,
-                0.9889519259480442
-            ],
-            [
-                0.0045045045045045045,
-                0.9753017958452417
-            ],
-            [
-                0.006006006006006006,
-                0.5794480228639679
-            ],
-            [
-                0.013513513513513514,
-                0.008872584566821653
-            ],
-            [
-                0.990990990990991,
-                0.025252740690184704
-            ]
-        ],
+        "zone_points": [],
         "trigger_person": true,
-        "trigger_vehicle": false,
-        "trigger_unknown_face": true
+        "trigger_vehicle": true,
+        "trigger_unknown_face": true,
+        "siren_max_duration": 60.0,
+        "siren_rearm_gap": 20.0
     },
     "detection": {
         "save_images": true,
-        "save_directory": "detections",
+        "save_directory": "data/detections",
         "detect_fps": 2.0,
-        "retention_days": 15
+        "retention_days": 15,
+        "low_light_brightness_threshold": 70,
+        "low_light_person_min_confidence": 0.55,
+        "person_movement_check_enabled": true,
+        "person_movement_window_seconds": 5.0,
+        "person_movement_min_pixels": 18,
+        "person_movement_min_track_age": 1.5
     },
     "plate": {
         "enabled": true,
-        "vehicle_save_directory": "detections/vehicles",
-        "plate_save_directory": "detections/plates",
-        "dedup_seconds": 300,
-        "iou_thresh": 0.3,
-        "confirm_seconds": 2.0,
-        "min_confidence": 0.5
+        "detector_model": "models/license_plate_detector.pt",
+        "detector_confidence": 0.35,
+        "ocr_min_confidence": 0.35,
+        "save_directory": "data/detections/plates"
     },
     "display": {
         "show_camera": true,
@@ -92,13 +73,13 @@
     },
     "face": {
         "enabled": true,
-        "known_faces_dir": "known_faces",
-        "db_cache": "face_db.pkl",
+        "known_faces_dir": "data/known_faces",
+        "db_cache": "data/face_db.pkl",
         "similarity_threshold": 0.72,
         "recognize_fps": 2.0,
         "alert_only_unknown": true,
         "save_unknown_faces": true,
-        "unknown_save_directory": "unknown_faces",
+        "unknown_save_directory": "data/unknown_faces",
         "margin": 0.05,
         "top_k": 5,
         "min_face_size": 40,

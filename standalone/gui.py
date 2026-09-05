@@ -11,9 +11,18 @@ from tkinter import ttk, messagebox, filedialog
 # CONFIG
 # ==================================================
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(BASE, "config.json")
-MAIN_FILE = os.path.join(BASE, "main.py")
+# gui.py nam trong standalone/, cung thu muc voi main.py - nhung
+# config.json, register_face.py (trong imou_ai/face/) lai o vi tri khac
+# nen can 2 bien rieng:
+#   SCRIPT_DIR    = thu muc chua gui.py/main.py (standalone/)
+#   PROJECT_ROOT  = thu muc goc du an (chua config.json, imou_ai/, data/...)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+
+BASE = PROJECT_ROOT
+CONFIG_FILE = os.path.join(PROJECT_ROOT, "config.json")
+MAIN_FILE = os.path.join(SCRIPT_DIR, "main.py")
+REGISTER_FACE_FILE = os.path.join(PROJECT_ROOT, "imou_ai", "face", "register_face.py")
 
 
 def load_config():
@@ -631,7 +640,7 @@ add_field(
     "Âm thanh",
     cfg["alert"].get(
         "sound",
-        "sound.wav"
+        "assets/sound.wav"
     ),
     alert_vars,
     "sound"
@@ -786,7 +795,7 @@ add_field(
     face_tab,
     3,
     "Thư mục người quen",
-    face_cfg_gui.get("known_faces_dir", "known_faces"),
+    face_cfg_gui.get("known_faces_dir", "data/known_faces"),
     face_vars,
     "known_faces_dir"
 )
@@ -816,7 +825,7 @@ add_field(
     face_tab,
     4,
     "Thư mục lưu người lạ",
-    face_cfg_gui.get("unknown_save_directory", "unknown_faces"),
+    face_cfg_gui.get("unknown_save_directory", "data/unknown_faces"),
     face_vars,
     "unknown_save_directory"
 )
@@ -908,13 +917,13 @@ face_hint.grid(
 
 def rebuild_face_db():
 
-    script = os.path.join(BASE, "register_face.py")
+    script = REGISTER_FACE_FILE
 
     try:
 
         result = subprocess.run(
             [sys.executable, script, "--rebuild-only"],
-            cwd=BASE,
+            cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
             timeout=180

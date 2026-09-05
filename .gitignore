@@ -1,0 +1,7 @@
+detections/
+__pycache__/
+automatic-number-plate-recognition-python-yolov8/
+
+reorganize.ps1
+sound.wav
+events.jsonl

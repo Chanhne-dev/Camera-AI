@@ -1,0 +1,51 @@
+fix: sua duong dan BASE va import sau khi tai cau truc thanh package imou_ai
+
+Sau khi chuyen sang cau truc package (imou_ai/core, imou_ai/face,
+imou_ai/detection, imou_ai/plate, imou_ai/audio, standalone/), nhieu
+file van tu tinh BASE bang vi tri cua chinh no (os.path.dirname(__file__))
+- sai vi config.json/data/assets/models khong con cung cap thu muc nua.
+
+Sua trong cac file:
+
+- standalone/main.py
+  * Them sys.path.insert(0, PROJECT_ROOT) truoc import imou_ai.* de
+    chay truc tiep "python standalone/main.py" khong bi ModuleNotFoundError
+  * Sua BASE tro ve thu muc goc du an (truoc do tro nham vao standalone/)
+  * Sua duong dan goi speaker.py -> imou_ai/audio/speaker.py
+  * Cap nhat fallback default cho known_faces_dir, db_cache,
+    unknown_save_directory, sound sang duong dan moi (data/..., assets/...)
+
+- standalone/gui.py
+  * Tach rieng SCRIPT_DIR (chua gui.py/main.py) va PROJECT_ROOT (chua
+    config.json) - truoc do dung chung 1 bien BASE nen CONFIG_FILE bi sai
+  * Sua duong dan goi register_face.py -> imou_ai/face/register_face.py
+  * Cap nhat fallback default tuong tu main.py
+
+- imou_ai/face/register_face.py
+  * Them sys.path.insert (len 2 cap) de "from imou_ai.face.face_engine
+    import FaceEngine" hoat dong ca khi chay truc tiep bang duong dan
+    file, khong chi khi import qua package
+  * Sua BASE tro ve thu muc goc du an
+  * Cap nhat docstring huong dan dung "python -m imou_ai.face.register_face"
+
+- imou_ai/audio/speaker.py
+  * Sua BASE len 3 cap (audio -> imou_ai -> goc) - anh huong toi duong
+    dan sound.wav va imou-life/deploy/.../frigate_imou_talk_exec.py
+
+- config.json
+  * alert.sound: "sound.wav" -> "assets/sound.wav" cho khop quy uoc
+    duong dan tuong doi-theo-goc-du-an cua cac key khac
+
+- web_app.py, web/templates/config.html
+  * Cap nhat fallback default cho alert.sound khop voi config.json
+
+Da test: chay truc tiep standalone/main.py va
+imou_ai/face/register_face.py (ca 2 cach: duong dan file va -m), xac
+nhan vuot qua toan bo buoc import/doc config.json, khong con
+ModuleNotFoundError. Kiem tra rieng speaker.py va gui.py bang cach doc
+lai logic tinh duong dan (khong chay duoc tkinter/ffmpeg that trong moi
+truong test) - xac nhan tat ca file dich (sound.wav, register_face.py,
+main.py, config.json) deu duoc tro dung vi tri.
+
+Khong thay doi logic detect/nhan dien/canh bao - chi sua duong dan va
+import cho khop cau truc thu muc moi.

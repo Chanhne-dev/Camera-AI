@@ -3,17 +3,22 @@ register_face.py
 
 Cong cu dang ky khuon mat nguoi quen vao thu muc known_faces/.
 
-Cach dung:
+Cach dung (chay tu THU MUC GOC du an, khong phai tu ben trong imou_ai/):
 
     1) Chup tu webcam (may tinh, khong phai camera IMOU):
-       python register_face.py --name "Nguyen Van A" --webcam
+       python -m imou_ai.face.register_face --name "Nguyen Van A" --webcam
 
        -> Nhan phim SPACE de chup 1 anh, chup khoang 5-10 anh voi
           goc mat / bieu cam khac nhau, nhan ESC/Q khi xong.
 
     2) Dung anh co san:
-       python register_face.py --name "Nguyen Van A" --images anh1.jpg anh2.jpg
-IMG_6939.JPG IMG_6940.JPG IMG_6941.JPG IMG_6942.JPG IMG_6943.JPG IMG_6944.JPG
+       python -m imou_ai.face.register_face --name "Nguyen Van A" --images anh1.jpg anh2.jpg
+
+    (Van chay duoc bang duong dan file truc tiep, vd
+     "python imou_ai/face/register_face.py ...", vi file nay tu them
+     thu muc goc du an vao sys.path - nhung khuyen nghi dung "-m" o tren
+     cho chuan.)
+
 Sau khi dang ky xong, chay lai main.py (hoac goi FaceEngine().build_db())
 de he thong cap nhat database nhan dien.
 """
@@ -22,12 +27,21 @@ import argparse
 import json
 import os
 import shutil
+import sys
 
 import cv2
 
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-KNOWN_FACES_DIR = os.path.join(BASE, "known_faces")
+# File nay nam trong imou_ai/face/, con config.json/data/ nam o thu muc
+# goc du an (2 cap tren). Them thu muc goc vao sys.path TRUOC de:
+#   (a) BASE tinh dung vi tri config.json/data/
+#   (b) "from imou_ai.face.face_engine import FaceEngine" o duoi hoat
+#       dong dung ke ca khi file nay duoc chay TRUC TIEP (khong qua -m)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, PROJECT_ROOT)
+
+BASE = PROJECT_ROOT
+KNOWN_FACES_DIR = os.path.join(BASE, "data", "known_faces")
 
 
 def ensure_person_dir(name):
@@ -120,7 +134,7 @@ def import_images(name, image_paths):
 
 def rebuild_database():
     # Import cham (lazy) vi facenet-pytorch mat vai giay de nap model
-    from face_engine import FaceEngine
+    from imou_ai.face.face_engine import FaceEngine
 
     print("[INFO] Dang xay lai database nhan dien...")
 
@@ -131,8 +145,8 @@ def rebuild_database():
         with open(config_path, "r", encoding="utf-8") as f:
             face_cfg = json.load(f).get("face", {})
 
-    known_dir = os.path.join(BASE, face_cfg.get("known_faces_dir", "known_faces"))
-    cache_path = os.path.join(BASE, face_cfg.get("db_cache", "face_db.pkl"))
+    known_dir = os.path.join(BASE, face_cfg.get("known_faces_dir", "data/known_faces"))
+    cache_path = os.path.join(BASE, face_cfg.get("db_cache", "data/face_db.pkl"))
 
     engine = FaceEngine(
         known_faces_dir=known_dir,
